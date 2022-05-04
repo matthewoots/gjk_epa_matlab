@@ -68,24 +68,28 @@ function [npoints, result] = simplex_triangle(points, shape1, shape2)
         %Perpendicular to AC going away from triangle
         acp = cross(abc,ac);
 
-        %First, make sure our triangle "contains" the origin in a 2d projection
-        %sense.
-        %Is origin above (outside) AB?   
+        % First, make sure our triangle "contains" the origin in a 2d projection
+        % sense.
+        % Is origin above (outside) AB?   
         if dot(abp,ao) > 0
             c = b; %Throw away the furthest point and grab a new one in the right direction
             b = a;
             v = abp; %cross(cross(ab,ao),ab);
 
-            %Is origin above (outside) AC?
+        % Is origin above (outside) AC?
         elseif dot(acp, ao) > 0
+            % We do not use b since we already assume AO to be inside of
+            % line AB
             b = a;
             v = acp; %cross(cross(ac,ao),ac);
 
         else
+            % Since AO does not lie outside the 2 edges that means that it
+            % is contained inside and hence the triangle encloses it
             result = 1;
             break; %We got a good one.
         end
-        a = support(shape2,shape1,v);
+
     end
 
     npoints(1,:) = a;

@@ -4,6 +4,7 @@ close all
 
 addpath('functions');
 addpath('functions/gjk');
+addpath('functions/epa');
 
 % Boundary XYZ
 bnd = [-10 -10 0;
@@ -93,6 +94,37 @@ end
 
 fprintf('Time of GJK %.3f\n', toc);
 
+%% EPA Winter Dev
+
+if flag == 1
+    % https://blog.winter.dev/2020/epa-algorithm/
+    polytope = points;
+    epa_faces = [
+		1, 2, 3; ...
+		1, 4, 2; ...
+		1, 3, 4; ...
+		2, 4, 3];
+    
+    [normals_map, min_dist_map, min_triangle] = ...
+        get_face_normals(polytope, epa_faces);
+    
+    min_distance = 1000;
+%     while (min_distance == 1000)
+		min_normal = normals_map(min_triangle,:);
+		min_distance = min_dist_map(min_triangle);
+        
+        sup = support(vertexes{2},vertexes{1}, min_normal);
+		sup_distance = dot(min_normal, sup);
+        
+        if abs(sup_distance - min_distance) > 0.001
+			min_distance = 1000;
+            [unique_edge] = make_unique_edges( ...
+                normals_map, sup, epa_faces);
+        end
+        
+%     end
+
+end
 %% Plotting
 figure(1)
 hold on

@@ -60,6 +60,7 @@ for i=1:num_line
     'Facecolor',[0.8 0.8 1],'FaceAlpha',0.3);
 end
 
+title('Polygon 3D space')
 axis([bnd(:,1)', ...
       bnd(:,2)', ...
       bnd(:,3)']);
