@@ -18,6 +18,8 @@ for i=1:num_obs
     centers(i,:) = center;
 end
 
+
+%% Plotting
 figure(1)
 hold on
 

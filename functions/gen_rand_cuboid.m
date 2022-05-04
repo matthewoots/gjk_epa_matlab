@@ -1,5 +1,10 @@
 function [face, vertex, center] = gen_rand_cuboid( ...
     bnd, max_size)
+
+    % Receive inputs
+    % bnd = Bondary value that is rotated with respect to length of line
+    % max_size = Scale of the random generated value
+
     % Roll Pitch Yaw
     rand_rot_fact = 2 * rand(1,3) - 1;
     rand_euler = rand_rot_fact * 3.1415;
@@ -22,6 +27,7 @@ function [face, vertex, center] = gen_rand_cuboid( ...
     obs_vert = zeros(8, 3);
     rot_bnd = zeros(8, 3);
     
+    % Setup the vertices of the box (not rotated)
     bnd_arr = [-obs_bnd(1) -obs_bnd(2) -obs_bnd(3);
                obs_bnd(1) -obs_bnd(2) -obs_bnd(3);
                obs_bnd(1) obs_bnd(2) -obs_bnd(3);

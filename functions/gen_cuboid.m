@@ -1,12 +1,18 @@
 function [face, vertex] = gen_cuboid( ...
     origin, bound, rot)
 
+    % Receive inputs
+    % Origin = Centroid of the cuboid
+    % Bound = Bondary value that is rotated with respect to length of line
+    % Rot = Represents the 3x3 rotation matrix
+    
     obs_origin = origin;
     
     obs_bnd = bound; 
     obs_vert = zeros(8, 3);
     rot_bnd = zeros(8, 3);
     
+    % Setup the vertices of the box (not rotated)
     bnd_arr = [-obs_bnd(1) -obs_bnd(2) -obs_bnd(3);
                obs_bnd(1) -obs_bnd(2) -obs_bnd(3);
                obs_bnd(1) obs_bnd(2) -obs_bnd(3);
