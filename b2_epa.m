@@ -61,9 +61,9 @@ if flag == 1
     epa_start = tic;
     
     EPA_TOLERANCE = 0.0001;
-    EPA_MAX_NUM_FACES = 32;
+    EPA_MAX_NUM_FACES = 64;
     EPA_MAX_NUM_LOOSE_EDGES = 32;
-    EPA_MAX_NUM_ITERATIONS = 32;
+    EPA_MAX_NUM_ITERATIONS = 64;
 
     a = points(1,:);
     b = points(2,:);

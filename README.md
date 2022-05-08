@@ -1,11 +1,13 @@
 # GJK_EPA_MATLAB
-GJK and EPA polygon collision used in physics game engines
+GJK and EPA polygon collision used in physics game engines, to find a collision free path. How to use? `Each of the matlab scripts` runs on its own and serves a particular function as stated in the `script title`.
 
-`Each of the matlab code runs on its own`
+1. **Sample output** of `b4_epa_function.m`
 
-**Sample Image**
+![Sample Picture1](sample.png)
 
-![Sample Picture](sample.png)
+2. **Sample output** of `c2_epa_safety_obs.m`
+
+![Sample Picture2](sample2.png)
 
 ## Notes
 0. EPA implementation : https://github.com/kevinmoran/GJK/blob/master/GJK.h

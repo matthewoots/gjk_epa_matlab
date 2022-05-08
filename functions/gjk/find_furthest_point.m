@@ -2,7 +2,7 @@ function [max_point] = find_furthest_point(vert_array, direction)
     
     % https://blog.winter.dev/2020/gjk-algorithm/ 
     % From C++ to matlab
-    FLT_MIN = -10000;
+    FLT_MIN = -1000000;
     max_distance = FLT_MIN;
     max_point = [FLT_MIN FLT_MIN FLT_MIN];
     
