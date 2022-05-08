@@ -96,11 +96,13 @@ fprintf('Time of GJK %.3f\n', toc);
 %% Plotting
 figure(1)
 hold on
-plot3(centers(:,1), centers(:,2), centers(:,3),'x');
+plot3(centers(:,1), centers(:,2), centers(:,3), ...
+    'x','DisplayName','centroids');
 
 for i=1:num_obs
     patch('Faces',faces{i},'Vertices',vertexes{i}, ...
-    'Facecolor',[0.8 0.8 1],'FaceAlpha',0.3);
+    'Facecolor',[0.8 0.8 1],'FaceAlpha',0.3, ...
+    'LineStyle','--','DisplayName',"polygon "+num2str(i));
 end
 
 title('Polygon 3D space')
@@ -110,6 +112,7 @@ axis([bnd(:,1)', ...
 xlabel('x');
 ylabel('y');
 zlabel('z');
+legend;
 view(3);
 grid on
 hold off
@@ -118,16 +121,20 @@ hold off
 figure(2)
 hold on
 
-plot3(0, 0, 0,'o');
-plot3(points(:,1), points(:,2), points(:,3),'x');
+plot3(0, 0, 0,'o', ...
+        'LineStyle','--','DisplayName',"origin");
+plot3(points(:,1), points(:,2), points(:,3),'x', ...
+        'LineStyle','--','DisplayName',"simplex vertices");
 
 patch('Faces',md_vert_faces,'Vertices',points, ...
-    'Facecolor',[0.8 0.8 1],'FaceAlpha',0.3);
+    'Facecolor',[0.8 0.8 1],'FaceAlpha',0.2, ...
+    'LineStyle','--','DisplayName',"gjk simplex");
 
 title('Minkowski Difference')
 xlabel('x');
 ylabel('y');
 zlabel('z');
+legend;
 view(3);
 grid on
 hold off

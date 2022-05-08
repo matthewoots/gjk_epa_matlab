@@ -1,11 +1,14 @@
-clc
-clear
-close all
+
 
 addpath('functions');
 addpath('functions/gjk');
 addpath('functions/epa');
 
+max_run = 50;
+for run_count = 1:max_run
+
+max_run = 50;
+timer_start = tic;
 % Boundary XYZ
 bnd = [-10 -10 0;
        10 10 10];
@@ -20,12 +23,14 @@ for i=1:num_obs
     centers(i,:) = center;
 end
 
-tic
+
 %% GJK mws262
 % There are some faults with winter.dev conversion hence using GJK
 % Collision Detection from mws262
 % https://github.com/mws262/MATLAB-GJK-Collision-Detection
 %Point 1 and 2 selection (line segment)
+gjk_start = tic;
+
 direction = [1 0 0];
 [points] = simplex_line(direction,vertexes{2},vertexes{1});
 
@@ -49,7 +54,7 @@ switch height(points)
                          4 1 3 nan];
 end
 
-fprintf('Time of GJK %.3f\n', toc);
+fprintf('Time of GJK %.3f\n', toc(gjk_start));
 
 %% EPA 
 % https://github.com/kevinmoran/GJK/blob/master/GJK.h
@@ -57,6 +62,7 @@ FLT_MIN = -10000;
 epa_col_vect = [FLT_MIN,FLT_MIN,FLT_MIN];
 
 if flag == 1
+    epa_start = tic;
     
     EPA_TOLERANCE = 0.0001;
     EPA_MAX_NUM_FACES = 64;
@@ -209,12 +215,13 @@ if flag == 1
 
     if iterations == EPA_MAX_NUM_ITERATIONS
         fprintf("[EPA] exit EPA_MAX_NUM_ITERATIONS\n");
+        % Return most recent closest point
+        epa_col_vect = ...
+            epa_faces{closest_face,4} * ...
+            dot(epa_faces{closest_face,1}, epa_faces{closest_face,4});
     end
-    
-    % Return most recent closest point
-    epa_col_vect = ...
-        epa_faces{closest_face,4} * ...
-        dot(epa_faces{closest_face,1}, epa_faces{closest_face,4});
+
+    fprintf('Time of EPA %.3f\n', toc(epa_start));
 end
 
 %% Plotting
@@ -280,3 +287,23 @@ legend;
 view(3);
 grid on
 hold off
+
+    
+%% Set delay to real time 
+dt = 0.75;
+timer_end = toc(timer_start);
+fprintf('run_count %d, time %.2f\n', ...
+    run_count, timer_end);  
+
+if timer_end < dt
+   pause(dt - timer_end); 
+end
+
+if run_count ~= max_run
+    clf % Clear figure
+    clc
+    clear
+    close all
+end
+
+end
