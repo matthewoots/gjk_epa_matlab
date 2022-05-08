@@ -20,12 +20,13 @@ for i=1:num_obs
     centers(i,:) = center;
 end
 
-tic
 %% GJK mws262
 % There are some faults with winter.dev conversion hence using GJK
 % Collision Detection from mws262
 % https://github.com/mws262/MATLAB-GJK-Collision-Detection
-%Point 1 and 2 selection (line segment)
+% Point 1 and 2 selection (line segment)
+gjk_start = tic;
+
 direction = [1 0 0];
 [points] = simplex_line(direction,vertexes{2},vertexes{1});
 
@@ -49,7 +50,7 @@ switch height(points)
                          4 1 3 nan];
 end
 
-fprintf('Time of GJK %.3f\n', toc);
+fprintf('Time of GJK %.3f\n', toc(gjk_start));
 
 %% EPA 
 % https://github.com/kevinmoran/GJK/blob/master/GJK.h
@@ -57,9 +58,10 @@ FLT_MIN = -10000;
 epa_col_vect = [FLT_MIN,FLT_MIN,FLT_MIN];
 
 if flag == 1
+    epa_start = tic;
     
     EPA_TOLERANCE = 0.0001;
-    EPA_MAX_NUM_FACES = 64;
+    EPA_MAX_NUM_FACES = 32;
     EPA_MAX_NUM_LOOSE_EDGES = 32;
     EPA_MAX_NUM_ITERATIONS = 32;
 
@@ -76,15 +78,29 @@ if flag == 1
     
     % Start with a tetrahedron
     num_faces = 4;
+    exit_flag = -1;
     
     for iterations = 1:EPA_MAX_NUM_ITERATIONS
+        min_count = 1;
         % Find face that's closest to origin
-        min_dist = dot(epa_faces{1,1}, epa_faces{1,4});
-        closest_face = 1;
-        for i = 2:num_faces
+        min_dist = dot(epa_faces{min_count,1}, ...
+                    epa_faces{min_count,4});
+        while isnan(min_dist)
+            min_count = min_count+1;
+            min_dist = dot(epa_faces{min_count,1}, ...
+                epa_faces{min_count,4});
+        end
+        
+        closest_face = min_count;
+        for i = 1:num_faces
+            if i == min_count
+               continue; 
+            end
+            
             dist = dot(epa_faces{i,1}, epa_faces{i,4});
             if dist < min_dist && ...
-                    ~any(isnan(epa_faces{i,4}) == 1)
+                    ~any(isnan(epa_faces{i,4}) == 1) && ...
+                    ~isnan(dist) 
                 min_dist = dist;
                 closest_face = i;
             end
@@ -99,9 +115,10 @@ if flag == 1
             epa_col_vect = ...
                 epa_faces{closest_face, 4} * ...
                 dot(p, search_dir); 
+            exit_flag = 0;
             fprintf("[EPA] exit CONVERGENCE\n");
             % dot vertex with normal to resolve collision along normal
-            break;
+            break; % This break will end the iterations loop
         end
         
         % keep track of edges we need to fix after removing faces
@@ -148,6 +165,7 @@ if flag == 1
                     if ~found_edge % add current edge to list
                         % assert(num_loose_edges<EPA_MAX_NUM_LOOSE_EDGES);
                         if num_loose_edges >= EPA_MAX_NUM_LOOSE_EDGES 
+                            exit_flag = 1;
                             fprintf("[EPA] exit EPA_MAX_NUM_LOOSE_EDGES\n");
                             break;
                         end
@@ -174,6 +192,7 @@ if flag == 1
         for i = 1:num_loose_edges
             % assert(num_faces<EPA_MAX_NUM_FACES);
             if num_faces >= EPA_MAX_NUM_FACES 
+                exit_flag = 2;
                 fprintf("[EPA] exit EPA_MAX_NUM_FACES\n");
                 break;
             end
@@ -186,10 +205,10 @@ if flag == 1
             epa_faces{num_faces+1,3} = p;
             epa_faces{num_faces+1,4} = face_vect/norm(face_vect);
             
-            if any(face_vect == 0) && ...
-                    norm(face_vect) == 0
-                epa_faces{num_faces+1,4} = face_vect;
-            end
+            % if any(face_vect == 0) && ...
+            %        norm(face_vect) == 0
+            %    epa_faces{num_faces+1,4} = face_vect;
+            % end
 
             % Check for wrong normal to maintain CCW winding
             bias = 0.000001; % in case dot result is only slightly < 0 (because origin is on face)
@@ -205,16 +224,21 @@ if flag == 1
             
             num_faces = num_faces + 1;
         end
+        
+        if exit_flag >= 0
+            fprintf("[EPA] exit_flag in iterations %d\n", exit_flag);
+        end
     end % iterations = 1:EPA_MAX_NUM_ITERATIONS
 
     if iterations == EPA_MAX_NUM_ITERATIONS
         fprintf("[EPA] exit EPA_MAX_NUM_ITERATIONS\n");
+        % Return most recent closest point
+        epa_col_vect = ...
+            epa_faces{closest_face,4} * ...
+            dot(epa_faces{closest_face,1}, epa_faces{closest_face,4});
     end
-    
-    % Return most recent closest point
-    epa_col_vect = ...
-        epa_faces{closest_face,4} * ...
-        dot(epa_faces{closest_face,1}, epa_faces{closest_face,4});
+
+    fprintf('Time of EPA %.3f\n', toc(epa_start));
 end
 
 %% Plotting
@@ -249,6 +273,7 @@ view(3);
 grid on
 hold off
 
+pos1 = get(gcf,'Position'); % get position of Figure(1) 
 
 figure(2)
 hold on
@@ -265,11 +290,52 @@ if ~any(epa_col_vect(:) == FLT_MIN)
 	plot3(epa_plot(:,1), ...
         epa_plot(:,2), ...
         epa_plot(:,3), ...
-        'LineStyle','--','DisplayName',"epa closest vector");
+        'LineStyle','-','DisplayName',"epa closest vector", ...
+        'LineWidth',3);
+    
+    % Sorting epa vertices
+    sorted_epa_vertices = [epa_faces{1,1}; ...
+                           epa_faces{1,2}; ...
+                           epa_faces{1,3}];
+    % We will use the rows of the epa_faces to filter the vertices
+    % Since we epa_faces are the final product
+    for c_idx = 2:height(epa_faces)
+        % Each row of the cell has 3 vertices that form up a triangle face
+        for row_idx = 1:3
+            % Using ismember function to scan through the row
+            [check,member_row] = ismember(...
+                epa_faces{c_idx, row_idx}, ...
+                sorted_epa_vertices, 'rows');
+            % If check and not found, we add it into the vertices array
+            if ~check
+                sorted_epa_vertices( ...
+                    height(sorted_epa_vertices)+1, :) = ...
+                    epa_faces{c_idx, row_idx};
+            end
+        end
+    end
+    
+    epa_face_idx = NaN(height(epa_faces),4);
+    % We do another pass to put the index represented in sorted_epa_vertices
+    % and place it into the epa_face_idx order
+    for c_idx = 1:height(epa_faces)
+        % Each row of the cell has 3 vertices that form up a triangle face
+        for row_idx = 1:3
+            % Using ismember function to scan through the row
+            [check,member_row] = ismember(...
+                epa_faces{c_idx, row_idx}, ...
+                sorted_epa_vertices, 'rows');
+            epa_face_idx(c_idx, row_idx) = member_row;
+        end
+    end
+    
+    patch('Faces',epa_face_idx,'Vertices',sorted_epa_vertices, ...
+        'Facecolor',[0.8 0.3 0.4],'FaceAlpha',0.05, ...
+        'LineStyle','-','DisplayName',"epa polyhedron");
 end
 
 patch('Faces',md_vert_faces,'Vertices',points, ...
-    'Facecolor',[0.8 0.8 1],'FaceAlpha',0.2, ...
+    'Facecolor',[0.8 0.8 1],'FaceAlpha',0.4, ...
     'LineStyle','--','DisplayName',"gjk simplex");
 
 title('Minkowski Difference')
@@ -280,3 +346,7 @@ legend;
 view(3);
 grid on
 hold off
+
+set(gcf,'Position', get(gcf,'Position') + [0,0,150,0]); % When Figure(2) is not the same size as Figure(1)
+pos2 = get(gcf,'Position');  % get position of Figure(2) 
+set(gcf,'Position', pos2 + [pos1(3),0,0,0]) % Shift position of Figure(2)
