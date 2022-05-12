@@ -42,21 +42,8 @@ end
 
 rots = cell(1,num_line);
 for i=1:num_line
-    vect = point_pairs{i}(2,:) - point_pairs{i}(1,:);
-    vect_norm = vect / norm(vect);
-    % atan(O=x/A=y)
-    yaw = atan(vect_norm(1)/vect_norm(2));
-    unrot_vect = eul2rotm([yaw, 0, 0]) * vect_norm';
-    pitch = atan(unrot_vect(3)/unrot_vect(2));
-    
-    % atan(O=z/A=xy)
-    rotmZYX = eul2rotm([-yaw, 0, pitch]);
-    bound = [buff norm(vect)+buff buff];
-    
-    origin = (point_pairs{i}(2,:) + point_pairs{i}(1,:)) / 2;
-    
-    [face, vertex] = gen_cuboid( ...
-        origin, bound, rotmZYX);
+    [face,vertex] = safe_corridor( ...
+        point_pairs{i}(1,:), point_pairs{i}(2,:), buff);
     faces{i} = face; vertexes{i} = vertex; 
     
 end
